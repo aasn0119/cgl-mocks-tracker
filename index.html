@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SSC CGL Mock Performance Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow">SSC CGL Mock Performance Tracker</span>
+        <h1>Track mocks, weak areas, trends, and competition in one workspace.</h1>
+        <p>
+          A responsive single-page tracker for Abhi & Anshika with LocalStorage persistence,
+          import/export, dashboard analytics, leaderboard insights, and Chart.js visualizations.
+        </p>
+      </div>
+      <div class="hero-actions">
+        <button class="btn btn-ghost" id="themeToggle" type="button" aria-pressed="false" aria-label="Toggle Dark Mode">🌙</button>
+        <button class="btn btn-primary" id="exportJsonBtn" type="button">⬇️ JSON</button>
+        <button class="btn btn-secondary" id="importJsonBtn" type="button">⬆️ JSON</button>
+        <button class="btn btn-secondary" id="exportCsvBtn" type="button">📊 CSV</button>
+        <input type="file" id="importJsonInput" accept="application/json" hidden />
+      </div>
+    </header>
+
+    <nav class="section-nav" aria-label="Quick section navigation">
+      <a href="#overview">📊 Overview</a>
+      <a href="#mockForm">✏️ Entry</a>
+      <a href="#weakForm">⚠️ Weak</a>
+      <a href="#charts">📈 Charts</a>
+      <a href="#comparison">🏆 vs</a>
+      <a href="#records">📋 Table</a>
+      <a href="#reports">📑 Reports</a>
+    </nav>
+
+    <main class="layout">
+      <section class="panel panel-accent target-panel" id="overview">
+        <div>
+          <span class="section-tag">🎯 TARGET</span>
+          <h2>Progress to Target</h2>
+          <p>Set a goal and watch the latest mock and rolling averages move toward it.</p>
+        </div>
+        <div class="target-controls">
+          <label class="field compact">
+            <span>🎯 Goal</span>
+            <input type="number" id="targetScoreInput" min="0" max="200" step="1" value="160" />
+          </label>
+          <button class="btn btn-primary" id="saveTargetBtn" type="button" aria-label="Save Target Score">✓</button>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-meta">
+            <span>Progress</span>
+            <strong id="targetProgressText">0%</strong>
+          </div>
+          <div class="progress-bar"><div id="targetProgressFill"></div></div>
+          <div class="progress-caption" id="targetProgressCaption">No mock scores yet.</div>
+        </div>
+      </section>
+
+      <section class="stats-grid" id="dashboardCards">
+        <article class="stat-card"><span>Total Mocks</span><strong id="totalMocks">0</strong></article>
+        <article class="stat-card"><span>Average Score</span><strong id="averageScore">0.0</strong></article>
+        <article class="stat-card"><span>Best Score</span><strong id="bestScore">0</strong></article>
+        <article class="stat-card"><span>Current Score</span><strong id="currentScore">0</strong></article>
+        <article class="stat-card"><span>Average Accuracy</span><strong id="averageAccuracy">0.0%</strong></article>
+        <article class="stat-card"><span>Improvement %</span><strong id="improvementPercent">0.0%</strong></article>
+      </section>
+
+      <section class="panel subject-panel">
+        <div class="section-head">
+          <div>
+            <span class="section-tag">📐 AUTO CALC</span>
+            <h2>Subject Averages</h2>
+          </div>
+        </div>
+        <div class="subject-grid" id="subjectAverageCards"></div>
+      </section>
+
+      <section class="panel filters-panel">
+        <div class="section-head">
+          <div>
+            <span class="section-tag">🔍 FILTER</span>
+            <h2>Refine</h2>
+          </div>
+          <div class="search-box">
+            <input type="search" id="searchInput" placeholder="Search mock ID, remarks, or topic..." />
+          </div>
+        </div>
+        <div class="filters-grid">
+          <label class="field">
+            <span>👤 Student</span>
+            <select id="studentFilter"></select> 
+          </label>
+          <label class="field">
+            <span>🏢 Platform</span>
+            <select id="platformFilter"></select>
+          </label>
+          <label class="field">
+            <span>📅 From</span>
+            <input type="date" id="startDateFilter" />
+          </label>
+          <label class="field">
+            <span>📅 To</span>
+            <input type="date" id="endDateFilter" />
+          </label>
+        </div>
+      </section>
+
+      <section class="page-grid">
+        <form class="panel form-card page-card" id="mockForm" aria-labelledby="mockFormTitle" onsubmit="return false;">
+          <div class="section-head compact-head">
+            <div>
+              <span class="section-tag">✏️ MOCK</span>
+              <h2 id="mockFormTitle">Add Performance</h2>
+            </div>
+            <button class="btn btn-ghost" type="button" id="cancelMockEdit" hidden>Cancel Edit</button>
+          </div>
+          <div class="form-grid">
+            <label class="field"><span>📅 Date</span><input type="date" id="mockDate" required /></label>
+            <label class="field"><span>🏢 Platform</span><select id="mockPlatform" required></select></label>
+            <label class="field"><span>🏷️ ID</span><input type="text" id="mockId" placeholder="TB-24" required /></label>
+            <label class="field"><span>👤 Student</span><select id="mockStudent" required></select></label>
+            
+            <label class="field"><span>📍 Score</span><input type="number" id="mockTotalScore" min="0" max="200" step="0.5" required /></label>
+            <label class="field"><span>🏅 Rank</span><input type="number" id="mockRank" min="1" step="1" required /></label>
+            <label class="field"><span>📊 %ile</span><input type="number" id="mockPercentile" min="0" max="100" step="0.1" required /></label>
+            <label class="field"><span>🔤 ENG</span><input type="number" id="mockEnglish" min="0" max="50" step="0.5" required /></label>
+            <label class="field"><span>🧠 REA</span><input type="number" id="mockReasoning" min="0" max="50" step="0.5" required /></label>
+            <label class="field"><span>🔢 QNT</span><input type="number" id="mockQuant" min="0" max="50" step="0.5" required /></label>
+            <label class="field"><span>🌍 GK</span><input type="number" id="mockGk" min="0" max="50" step="0.5" required /></label>
+            <label class="field"><span>📝 Att</span><input type="number" id="mockAttempted" min="0" max="100" step="1" required /></label>
+            <label class="field"><span>✅ Corr</span><input type="number" id="mockCorrect" min="0" max="100" step="1" required /></label>
+            <label class="field"><span>❌ Wrng</span><input type="number" id="mockWrong" min="0" max="100" step="1" required /></label>
+            <label class="field"><span>⏱️ Time</span><input type="number" id="mockTimeTaken" min="0" max="60" step="1" placeholder="Mins" required /></label>
+            
+            <label class="field field-full"><span>📌 Notes</span><textarea id="mockRemarks" rows="3" placeholder="Observations..."></textarea></label>
+          </div>
+          <div class="live-metrics" id="mockLiveMetrics">
+            <div><span>🎯 Acc</span><strong id="liveAccuracy">0%</strong></div>
+            <div><span>📈 Imp</span><strong id="liveImprovement">0</strong></div>
+            <div><span>📊 Avg</span><strong id="liveOverallAvg">0</strong></div>
+            <div><span>⬆️ Max</span><strong id="liveBestScore">0</strong></div>
+            <div><span>⬇️ Min</span><strong id="liveWorstScore">0</strong></div>
+            <div><span>5️⃣ L5</span><strong id="liveLast5Avg">0</strong></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" type="submit" id="mockSubmitBtn">✓ Save</button>
+          </div>
+        </form>
+
+        <form class="panel form-card page-card" id="weakForm" aria-labelledby="weakAreaTitle" onsubmit="return false;">
+          <div class="section-head compact-head">
+            <div>
+              <span class="section-tag">⚠️ WEAK</span>
+              <h2 id="weakAreaTitle">Track Weak Topic</h2>
+            </div>
+          </div>
+          <div class="form-grid">
+            <label class="field"><span>📅 Date</span><input type="date" id="weakDate" required /></label>
+            <label class="field"><span>👤 Student</span><select id="weakStudent" required></select></label>
+            <label class="field"><span>📚 Subject</span><select id="weakSubject" required></select></label>
+            <label class="field"><span>🏷️ Topic</span><input type="text" id="weakTopic" placeholder="Synonyms" required /></label>
+            <label class="field"><span>🔴 Error</span><input type="text" id="weakMistakeType" placeholder="Concept gap" required /></label>
+            <label class="field field-full"><span>📝 Notes</span><textarea id="weakNotes" rows="3" placeholder="How to fix..."></textarea></label>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" type="submit">✓ Save</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel charts-panel" id="charts">
+        <div class="section-head">
+          <div>
+            <span class="section-tag">📈 CHARTS</span>
+            <h2>Trends</h2>
+          </div>
+        </div>
+        <div class="charts-grid">
+          <article class="chart-card"><h3>📍 Score</h3><canvas id="chartScoreTrend"></canvas></article>
+          <article class="chart-card"><h3>🎯 Accuracy</h3><canvas id="chartAccuracyTrend"></canvas></article>
+          <article class="chart-card"><h3>🔤 English</h3><canvas id="chartEnglishTrend"></canvas></article>
+          <article class="chart-card"><h3>🧠 Reasoning</h3><canvas id="chartReasoningTrend"></canvas></article>
+          <article class="chart-card"><h3>🔢 Quant</h3><canvas id="chartQuantTrend"></canvas></article>
+          <article class="chart-card"><h3>🌍 GK</h3><canvas id="chartGkTrend"></canvas></article>
+          <article class="chart-card"><h3>🏢 Platform Avg</h3><canvas id="chartPlatformAverage"></canvas></article>
+          <article class="chart-card"><h3>🏆 Abhi vs Anshika</h3><canvas id="chartStudentComparison"></canvas></article>
+        </div>
+      </section>
+
+      <section class="split-grid">
+        <section class="panel table-panel" id="records">
+          <div class="section-head">
+            <div>
+              <span class="section-tag">📋 TABLE</span>
+              <h2>All Entries</h2>
+            </div>
+            <span class="muted" id="mockTableCount">0 records</span>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th data-sort="date">Date</th>
+                  <th data-sort="platform">Platform</th>
+                  <th data-sort="mockId">Mock ID</th>
+                  <th data-sort="studentName">Student</th>
+                  <th data-sort="totalScore">Score</th>
+                  <th data-sort="rank">Rank</th>
+                  <th data-sort="percentile">Percentile</th>
+                  <th data-sort="accuracy">Accuracy</th>
+                  <th data-sort="improvement">Improvement</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="mockTableBody"></tbody>
+            </table>
+          </div>
+          <div class="empty-state" id="mockEmptyState" hidden>
+            <h3>No mock entries found</h3>
+            <p>Add your first mock performance above or adjust the filters.</p>
+          </div>
+        </section>
+
+        <section class="panel leaderboard-panel" id="comparison">
+          <div class="section-head">
+            <div>
+              <span class="section-tag">🏆 LEAD</span>
+              <h2>Leaderboard</h2>
+            </div>
+          </div>
+          <div class="leaderboard-grid" id="leaderboardCards"></div>
+          <div class="comparison-list" id="studentSummaryList"></div>
+        </section>
+      </section>
+
+      <section class="panel insights-panel" id="weak-insights">
+        <div class="section-head">
+          <div>
+            <span class="section-tag">⚠️ INSIGHTS</span>
+            <h2>Weak Topics</h2>
+          </div>
+          <span class="muted" id="weakTableCount">0 records</span>
+        </div>
+        <div class="insights-grid">
+          <article class="insight-box">
+            <h3>Most Frequent Mistakes</h3>
+            <ul id="mistakeFrequencyList"></ul>
+          </article>
+          <article class="insight-box">
+            <h3>Weakest Topics</h3>
+            <ul id="weakTopicList"></ul>
+          </article>
+          <article class="insight-box">
+            <h3>Strongest Topics</h3>
+            <ul id="strongTopicList"></ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel reports-panel" id="reports">
+        <div class="section-head">
+          <div>
+            <span class="section-tag">📑 REPORTS</span>
+            <h2>Weekly & Monthly</h2>
+          </div>
+        </div>
+        <div class="reports-grid">
+          <article class="report-card">
+            <h3>Weekly Performance</h3>
+            <div id="weeklyReport" class="report-values"></div>
+          </article>
+          <article class="report-card">
+            <h3>Monthly Performance</h3>
+            <div id="monthlyReport" class="report-values"></div>
+          </article>
+          <article class="report-card">
+            <h3>Platform Difficulty Comparison</h3>
+            <div id="platformDifficulty" class="report-values"></div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
