@@ -11,3 +11,4 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebas
 
   // Initialize Firebase
   const app = initializeApp(firebaseConfig);
+  console.log("Firebase Connected");
